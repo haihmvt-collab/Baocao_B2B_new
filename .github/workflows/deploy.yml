@@ -1,4 +1,4 @@
-name: Deploy Quarto to Netlify
+name: Deploy Quarto to Cloudflare Pages
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 # Không cho 2 lượt chạy chồng nhau (bấm Run nhiều lần / trùng giờ lịch)
 concurrency:
-  group: deploy-netlify
+  group: deploy-cloudflare
   cancel-in-progress: false
 
 jobs:
@@ -70,20 +70,14 @@ jobs:
         env:
           GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Setup Node (cho Netlify CLI)
+      - name: Setup Node (cho Wrangler)
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Deploy to Netlify
-        run: |
-          npx -y netlify-cli@27 deploy \
-            --prod \
-            --no-build \
-            --dir _site \
-            --functions netlify/functions \
-            --site "$NETLIFY_SITE_ID" \
-            --message "Deploy from GitHub Actions"
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=b2b-ptk --branch=main --commit-dirty=true
